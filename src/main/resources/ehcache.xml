@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Regions du cache de second niveau (EhCache 3, expose via JCache).
+
+    Les alias reprennent les noms de regions Hibernate :
+      - le nom complet de l'entite pour le cache d'entites ;
+      - "<entite>.<collection>" pour le cache de collection ;
+      - les deux regions techniques utilisees par le cache de requetes.
+
+    Sans ce fichier, JCache fabrique chaque region a la volee avec une
+    configuration par defaut : ni la taille du tas, ni la duree de vie des
+    entrees ne seraient alors maitrisees.
+
+    Les cles et valeurs restent en java.lang.Object : Hibernate n'y range pas
+    directement l'entite mais un CacheKeyImplementation et un Item de sa
+    strategie read-write, qui sont ses propres types internes.
+-->
+<config xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xmlns='http://www.ehcache.org/v3'
+        xsi:schemaLocation='http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd'>
+
+    <cache-template name="entites">
+        <expiry>
+            <ttl unit="minutes">60</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">1000</heap>
+        </resources>
+    </cache-template>
+
+    <cache alias="com.example.model.Auteur" uses-template="entites"/>
+
+    <cache alias="com.example.model.Livre" uses-template="entites"/>
+
+    <cache alias="com.example.model.Auteur.livres" uses-template="entites"/>
+
+    <!-- Region des estampilles de mise a jour : elle ne doit jamais expirer,
+         sinon Hibernate ne peut plus garantir la coherence du cache de requetes. -->
+    <cache alias="default-update-timestamps-region">
+        <expiry>
+            <none/>
+        </expiry>
+        <resources>
+            <heap unit="entries">10000</heap>
+        </resources>
+    </cache>
+
+    <cache alias="default-query-results-region">
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">10000</heap>
+        </resources>
+    </cache>
+
+</config>
